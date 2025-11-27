@@ -6,8 +6,7 @@ services:
     restart: unless-stopped
     volumes:
       - mongo-data:/data/db
-    ports:
-      - "27017:27017"
+    network_mode: host  
 
   backend:
     build:
@@ -21,8 +20,7 @@ services:
       - NODE_ENV=production
     depends_on:
       - mongo
-    ports:
-      - "8080:8080"
+    network_mode: host  
 
   frontend:
     build:
@@ -32,7 +30,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "8081:80"
+      - "8081:8081"
 
 volumes:
   mongo-data:
