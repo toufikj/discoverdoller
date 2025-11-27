@@ -1,8 +1,13 @@
-# Stage 1: build the Angular app
+# Stage 1: build Angular app
 FROM node:18-alpine AS builder
-WORKDIR /usr/src/app
+WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm install -g @angular/cli && npm install
+RUN npm install
 COPY . .
-EXPOSE 8081
-CMD ["ng", "serve", "--host", "0.0.0.0", "--port", "8081"]
+RUN npm run build --prod
+
+# Stage 2: Serve with nginx
+FROM nginx:1.21-alpine
+COPY --from=builder /app/dist/frontend /usr/share/nginx/html
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
