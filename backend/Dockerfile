@@ -2,7 +2,7 @@
 FROM node:18-alpine AS deps
 WORKDIR /usr/src/app
 COPY package.json package-lock.json* ./
-RUN npm install --production
+RUN npm install --omit=dev
 
 # Stage 2: copy source
 FROM node:18-alpine AS build
