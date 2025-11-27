@@ -63,4 +63,3 @@ services:
 
 volumes:
   mongo-data:
-    name: discoverdoller-mongo-data
