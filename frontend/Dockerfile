@@ -2,6 +2,7 @@
 FROM node:18-alpine AS builder
 WORKDIR /usr/src/app
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm install -g @angular/cli && npm install
 COPY . .
-RUN ng serve --port 8081 
+EXPOSE 8081
+CMD ["ng", "serve", "--host", "0.0.0.0", "--port", "8081"]
