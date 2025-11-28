@@ -1,123 +1,205 @@
-In this DevOps task, you need to build and deploy a full-stack CRUD application using the MEAN stack (MongoDB, Express, Angular 15, and Node.js). The backend will be developed with Node.js and Express to provide REST APIs, connecting to a MongoDB database. The frontend will be an Angular application utilizing HTTPClient for communication.  
+In this DevOps task, you need to build and deploy a full-stack CRUD application using the MEAN stack (MongoDB, Express, Angular 15, and Node.js). The backend is Node/Express (REST API) and the frontend is an Angular application.
 
-The application will manage a collection of tutorials, where each tutorial includes an ID, title, description, and published status. Users will be able to create, retrieve, update, and delete tutorials. Additionally, a search box will allow users to find tutorials by title.
+This README documents:
+- What was added to the repo so the app can run (no application source changes required)
+- How to run locally with Docker
+- How to deploy on an EC2 Linux host using Docker Compose
+- A sample GitHub Actions CI/CD workflow and the required secrets
 
-## Project setup
+## What was added (summary)
 
-### Node.js Server
+I added containerization and deployment artifacts so you can build and deploy the app without modifying the application source code:
 
-cd backend
-
-npm install
-
-You can update the MongoDB credentials by modifying the `db.config.js` file located in `app/config/`.
-
-Run `node server.js`
-
-### Angular Client
-
-cd frontend
-
-npm install
-
-Run `ng serve --port 8081`
-
-You can modify the `src/app/services/tutorial.service.ts` file to adjust how the frontend interacts with the backend.
-
-Navigate to `http://localhost:8081/`
-
-## Docker
-
-This repository includes multi-stage Dockerfiles for both the backend (Node/Express) and the frontend (Angular) to produce small, production-ready images.
-
-Files added
-- `backend/Dockerfile` - multi-stage Node image for the API server (listens on 8080)
+- `backend/Dockerfile` — multi-stage Node image (build/runtime) for the API server
 - `backend/.dockerignore`
-- `frontend/Dockerfile` - multi-stage build using Node for build and nginx to serve static files
+- `frontend/Dockerfile` — multi-stage Node builder + nginx static server for the Angular app
 - `frontend/.dockerignore`
-- `frontend/nginx-spa.conf` - nginx config to support SPA routing
+- `docker-compose.yml` — Compose manifest (current version uses host networking for EC2 compatibility)
+- `.env.example` — example environment variables
 
-Build and run
+Important: the application source files were not changed. The backend config (`backend/app/config/db.config.js`) and the frontend service (`frontend/src/app/services/tutorial.service.ts`) still reference `localhost` by default:
 
-1) Backend
+- Backend: default MongoDB URI is `mongodb://localhost:27017/dd_db` (see `backend/app/config/db.config.js`).
+- Frontend: `baseUrl` is `http://localhost:8080/api/tutorials` (see `frontend/src/app/services/tutorial.service.ts`).
 
-Build image (from repository root):
+Because the apps expect `localhost` addresses, the provided `docker-compose.yml` can be used with host networking on Linux (EC2) so containers and host share loopback and the apps work without code changes. For portable/production deployments I recommend switching the apps to read configuration from environment variables and using bridge networking — see the Recommended production improvements section.
+
+## Build and run with Docker (single-service)
+
+Build the backend image (from repo root):
 
 ```powershell
-docker build -f backend/Dockerfile -t discoverdoller-backend:latest .
+docker build -f backend/Dockerfile -t discoverdoller-backend:latest backend
 ```
 
-Run the backend (maps container 8080 -> host 8080):
+Run the backend:
 
 ```powershell
-docker run --rm -p 8080:8080 \
-	-e MONGO_HOST=<your-mongo-host> \
-	-e MONGO_PORT=<your-mongo-port> \
-	-e MONGO_DB=<your-db-name> \
-	discoverdoller-backend:latest
+docker run --rm -p 8080:8080 discoverdoller-backend:latest
 ```
 
-Note: This project reads MongoDB connection info from `app/models/index.js` (see `db.config.js`). Provide the appropriate environment variables or edit the config before building.
-
-2) Frontend
-
-Build the Angular production image:
+Build and run the frontend image:
 
 ```powershell
 docker build -f frontend/Dockerfile -t discoverdoller-frontend:latest frontend
-```
-
-Run the frontend (maps container 80 -> host 8081):
-
-```powershell
 docker run --rm -p 8081:80 discoverdoller-frontend:latest
 ```
 
-Then open the app at `http://localhost:8081/`.
+Visit `http://localhost:8081/` (frontend) and the frontend will call the backend at `http://localhost:8080/api/...` if both services run on the same host.
 
-Development notes
-- To run the backend without Docker:
+## Docker Compose (EC2-friendly current setup)
 
-```powershell
-cd backend; npm install; node server.js
-```
+The `docker-compose.yml` in this repository is configured to use host networking on Linux so the apps' default `localhost` configuration continues to work without modifying source files. Use this on an EC2 Linux instance.
 
-- To run the Angular dev server (live-reload):
+### Quick EC2 deployment (Linux)
 
-```powershell
-cd frontend; npm install; npx ng serve --port 8081
-```
+1) Launch an EC2 Linux instance (Ubuntu or Amazon Linux). Configure the instance security group to allow:
 
-If you'd like, I can also add Docker Compose to run both services plus a MongoDB container and wire environment variables. Tell me if you prefer that and any specific MongoDB credentials/ports you want.
+- SSH (22) from your IP
+- Frontend port (8081) from client CIDR(s)
 
-### Docker Compose (local or EC2)
+Do NOT expose MongoDB port 27017 to the public internet in production.
 
-I added a `docker-compose.yml` at the repository root to run MongoDB, the backend, and the frontend together.
+2) Install Docker & Docker Compose (Ubuntu example):
 
-Quick start on an EC2 instance (Amazon Linux / Ubuntu):
-
-1. Open the instance security group to allow inbound traffic on the ports you want to expose (e.g., 8081 for the frontend). For testing you may also open 8080 and 27017 but DO NOT expose MongoDB to the public internet in production.
-
-2. SSH into your EC2 instance, then install Docker and Docker Compose (example for Ubuntu):
-
-```powershell
-# Ubuntu example (run on the instance shell)
-sudo apt update; sudo apt install -y docker.io docker-compose; sudo usermod -aG docker $USER
+```bash
+sudo apt update
+sudo apt install -y docker.io docker-compose
+sudo usermod -aG docker $USER
 newgrp docker
 ```
 
-3. Clone this repo and start the stack:
+3) Deploy the stack on the instance:
 
-```powershell
-git clone <repo-url> discoverdoller; cd discoverdoller
-cp .env.example .env   # edit .env if you need custom values
+```bash
+git clone <repo-url> discoverdoller
+cd discoverdoller
+cp .env.example .env   # edit if needed
 docker compose up -d --build
 ```
 
-4. Visit the frontend at `http://<ec2-public-ip>:8081/`.
+4) Open `http://<ec2-public-ip>:8081/` in a browser.
 
-Notes and security:
-- Use a managed MongoDB service (Atlas) or run MongoDB in a private subnet and don't expose port 27017 to the internet.
-- For production, add credentials and enable authentication for MongoDB. Update `docker-compose.yml` and `app/config/db.config.js` to use those credentials or a `MONGODB_URI`.
-- Consider adding TLS termination (e.g., behind an ALB or nginx proxy) and a systemd unit or ECS/EKS for production orchestration.
+Notes:
+
+- Host networking exposes container ports on the host network; make sure there are no port conflicts.
+- Host networking is supported on Linux hosts (EC2). It is not portable to Docker Desktop on macOS/Windows.
+
+## Recommended production improvements (optional but recommended)
+
+1. Make the backend and frontend environment-aware:
+	 - Backend: read `MONGODB_URI` (or `MONGO_HOST`, `MONGO_PORT`, `MONGO_DB`) from environment and construct the connection string.
+	 - Frontend: read an `API_BASE_URL` at build time or via runtime-config to avoid hard-coding `http://localhost:8080`.
+
+2. Switch `docker-compose.yml` to bridge networking and refer to services by name (e.g., `backend:8080`), which is portable and secure.
+
+3. Secure MongoDB (authentication, network ACLs) or use a managed database (MongoDB Atlas) and do not expose port 27017 publicly.
+
+4. Use TLS/HTTPS (ALB, nginx, or a CDN) in front of the frontend for production.
+
+I can provide the minimal code diffs required to make the apps read environment variables and a portable `docker-compose` if you want — tell me and I'll prepare the changes.
+
+## CI / CD with GitHub Actions (example)
+
+This example covers:
+
+- CI: install/build the frontend and backend
+- CD: build and push Docker images to a registry, then SSH to an EC2 host and run `docker compose up -d`
+
+Create `.github/workflows/ci-cd.yml` with the following (example):
+
+```yaml
+name: CI-CD
+
+on:
+	push:
+		branches: [ main, master, initial ]
+
+jobs:
+	build_and_push:
+		runs-on: ubuntu-latest
+		steps:
+			- uses: actions/checkout@v4
+
+			- name: Set up Node.js
+				uses: actions/setup-node@v4
+				with:
+					node-version: '18'
+
+			- name: Build frontend
+				working-directory: ./frontend
+				run: |
+					npm ci
+					npm run build -- --configuration production
+
+			- name: Build backend dependencies
+				working-directory: ./backend
+				run: |
+					npm ci --production
+
+			- name: Set up Docker Buildx
+				uses: docker/setup-buildx-action@v2
+
+			- name: Login to Docker Hub
+				uses: docker/login-action@v2
+				with:
+					username: ${{ secrets.DOCKERHUB_USERNAME }}
+					password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+			- name: Build and push backend image
+				uses: docker/build-push-action@v4
+				with:
+					context: ./backend
+					push: true
+					tags: ${{ secrets.DOCKERHUB_USERNAME }}/discoverdoller-backend:latest
+
+			- name: Build and push frontend image
+				uses: docker/build-push-action@v4
+				with:
+					context: ./frontend
+					push: true
+					tags: ${{ secrets.DOCKERHUB_USERNAME }}/discoverdoller-frontend:latest
+
+	deploy_via_ssh:
+		needs: build_and_push
+		runs-on: ubuntu-latest
+		steps:
+			- name: Checkout
+				uses: actions/checkout@v4
+
+			- name: Deploy to EC2 via SSH
+				uses: appleboy/ssh-action@v0.1.9
+				with:
+					host: ${{ secrets.EC2_HOST }}
+					username: ${{ secrets.EC2_USER }}
+					key: ${{ secrets.EC2_SSH_KEY }}
+					port: ${{ secrets.EC2_SSH_PORT || '22' }}
+					script: |
+						cd /home/${{ secrets.EC2_USER }}/discoverdoller || git clone https://github.com/${{ github.repository }} discoverdoller && cd discoverdoller
+						docker compose pull || true
+						docker compose up -d --build
+
+```
+
+Required repository secrets for the workflow
+
+- `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (or credentials for your container registry)
+- `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY` (private key), and optionally `EC2_SSH_PORT`
+
+Notes on CI/CD design
+
+- The action builds the frontend in the runner (so the built `dist/` is available if you want to build an image locally) and uses `docker/build-push-action` to push images to a registry.
+- The deploy step SSHs to the target EC2 host and runs `docker compose up -d --build`. For production you may want the runner to only `docker pull` pre-built images and avoid building on the host.
+
+## Troubleshooting
+
+- If the backend cannot connect to MongoDB, check `backend/app/config/db.config.js` — it may expect `mongodb://localhost:27017/dd_db`. On bridge networks you must supply a `MONGODB_URI` or change the config to read `MONGO_HOST`/`MONGO_PORT`.
+- If the frontend cannot reach the API, check `frontend/src/app/services/tutorial.service.ts` for `baseUrl`.
+
+---
+
+If you want, I can now:
+- Add the `.github/workflows/ci-cd.yml` file with the example pipeline, or
+- Make the minimal, safe edits to backend and frontend to read environment variables and convert `docker-compose.yml` to bridge networking (recommended for portability and security).
+Tell me which you prefer and I'll proceed.
 
