@@ -97,13 +97,13 @@ Added screenshots to showcase the running application and help reviewers verify 
 ### Screenshots
 
 Docker Containers:
-![Containers](images/screenshot-1.png)
+<img width="1919" height="925" alt="Screenshot 2025-11-28 135918" src="https://github.com/user-attachments/assets/23df1f1a-c00b-46f1-80b1-fcc856af612f" />
 
 Tutorial Edit:
-![Tutorial-edit](images/screenshot-3.png)
+<img width="1919" height="1032" alt="Screenshot 2025-11-28 140033" src="https://github.com/user-attachments/assets/c8e092f4-9bb4-4641-80b4-63f72410f781" />
 
 Tutorial details:
-![Details](images/screenshot-4.png)
+<img width="1919" height="1035" alt="Screenshot 2025-11-28 141537" src="https://github.com/user-attachments/assets/3886bfb7-acf8-44b8-8b1b-45faee9dd903" />
 
 ```
 ## CI / CD with GitHub Actions (example)
