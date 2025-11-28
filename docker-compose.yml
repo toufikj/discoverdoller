@@ -12,8 +12,7 @@ services:
 
   backend:
     container_name: backend
-    build:
-      context: ./backend
+    image: toufikj/discoverdoller_backend:latest
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -23,17 +22,16 @@ services:
       - MONGO_DB=dd_db
       - MONGO_URL=mongodb://mongo:27017/dd_db
     depends_on:
-      - mongo 
+      - mongo
 
   frontend:
-    container_name: frontend  
-    build:
-      context: ./frontend
+    container_name: frontend
+    image: toufikj/discoverdoller_frontend:latest
     restart: always
     ports:
       - "80:80"
     depends_on:
-      - backend 
+      - backend
 
 volumes:
   mongo-data:
