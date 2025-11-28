@@ -21,6 +21,8 @@ services:
       - mongo
     expose:
       - "8080"
+    networks:
+      - app-network  
 
   frontend:
     build:
@@ -29,6 +31,12 @@ services:
       - backend
     ports:
       - "80:80"
+    networks:
+      - app-network  
 
 volumes:
   mongo-data:
+  
+networks:
+  app-network:
+    driver: bridge  
