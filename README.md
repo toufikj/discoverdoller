@@ -93,7 +93,6 @@ docker compose up -d --build
 
 Added screenshots to showcase the running application and help reviewers verify the deployment quickly.
 
-```markdown
 ### Screenshots
 
 Docker Containers:
@@ -105,7 +104,6 @@ Tutorial Edit:
 Tutorial details:
 <img width="1919" height="1035" alt="Screenshot 2025-11-28 141537" src="https://github.com/user-attachments/assets/3886bfb7-acf8-44b8-8b1b-45faee9dd903" />
 
-```
 ## CI / CD with GitHub Actions (example)
 
 This example covers:
