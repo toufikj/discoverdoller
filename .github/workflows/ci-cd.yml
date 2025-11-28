@@ -7,8 +7,8 @@ on:
       - main
 
 env: 
-  BACKEND_IMAGE_NAME: toufikj/discoverdoller-backend
-  FRONTEND_IMAGE_NAME: toufikj/discoverdoller-frontend      
+  BACKEND_IMAGE_NAME: toufikj/discoverdoller_backend
+  FRONTEND_IMAGE_NAME: toufikj/discoverdoller_frontend      
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -55,7 +55,9 @@ jobs:
           key: ${{ secrets.KEY_PAIR }}
           port: "22"
           script: |
-            cd ~/discoverdoller
+            pwd 
+            ls -la
+            cd discoverdoller
             git pull origin main
             docker-compose pull
             docker-compose up --remove-orphans -d
