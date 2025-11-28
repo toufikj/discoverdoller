@@ -47,7 +47,7 @@ jobs:
           tags: |
             ${{ env.FRONTEND_IMAGE_NAME }}:latest      
 
-      - name: SSSH and Deploy
+      - name: SSH and Deploy
         uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.PUBLIC_IP }}
