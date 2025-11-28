@@ -86,6 +86,26 @@ docker compose up -d --build
 
 4. Use TLS/HTTPS (ALB, nginx, or a CDN) in front of the frontend for production.
 
+
+---
+
+## Screenshots (showcase)
+
+Added screenshots to showcase the running application and help reviewers verify the deployment quickly.
+
+```markdown
+### Screenshots
+
+Docker Containers:
+![Containers](images/screenshot-1.png)
+
+Tutorial Edit:
+![Tutorial-edit](images/screenshot-3.png)
+
+Tutorial details:
+![Details](images/screenshot-4.png)
+
+```
 ## CI / CD with GitHub Actions (example)
 
 This example covers:
